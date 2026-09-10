@@ -1,0 +1,19 @@
+{
+  "name": "시각장애인 버스 안내 앱",
+  "short_name": "버스 안내",
+  "description": "음성 목적지 입력, 버스 API 연동, AI 노선번호 판정을 지원하는 버스 안내 앱 프로토타입",
+  "start_url": "./voice_guidance_app.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f4f6fb",
+  "theme_color": "#132033",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

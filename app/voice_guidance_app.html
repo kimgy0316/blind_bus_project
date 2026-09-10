@@ -1,0 +1,638 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>시각장애인 버스 안내 앱 프로토타입</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f7fb;
+      --panel: #ffffff;
+      --text: #172033;
+      --muted: #64708a;
+      --line: #d9dfeb;
+      --primary: #0b7a5c;
+      --primary-dark: #075f48;
+      --accent: #1458d4;
+      --warning: #b35c00;
+      --success: #14823b;
+      --shadow: 0 14px 34px rgba(20, 32, 55, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Malgun Gothic", "Apple SD Gothic Neo", Arial, sans-serif;
+      letter-spacing: 0;
+    }
+
+    main {
+      width: min(100%, 920px);
+      margin: 0 auto;
+      padding: 18px;
+    }
+
+    .app-shell {
+      min-height: calc(100vh - 36px);
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 16px 18px;
+      background: #132033;
+      color: #ffffff;
+    }
+
+    .title-block {
+      min-width: 0;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 22px;
+      line-height: 1.25;
+      font-weight: 800;
+    }
+
+    .subtitle {
+      margin-top: 4px;
+      color: #cbd5e8;
+      font-size: 14px;
+    }
+
+    .status-pill {
+      flex: 0 0 auto;
+      border: 1px solid rgba(255, 255, 255, 0.45);
+      border-radius: 999px;
+      padding: 7px 10px;
+      font-size: 13px;
+      color: #eaf2ff;
+    }
+
+    .content {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 14px;
+      padding: 14px;
+    }
+
+    .section {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #ffffff;
+      padding: 14px;
+    }
+
+    .section + .section {
+      margin-top: 14px;
+    }
+
+    h2 {
+      margin: 0 0 12px;
+      font-size: 18px;
+      line-height: 1.35;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    input {
+      width: 100%;
+      height: 48px;
+      border: 1px solid #c8d0df;
+      border-radius: 8px;
+      padding: 0 13px;
+      font-size: 17px;
+      color: var(--text);
+      outline: none;
+    }
+
+    input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(20, 88, 212, 0.14);
+    }
+
+    .button-row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    button {
+      min-height: 48px;
+      border: 0;
+      border-radius: 8px;
+      padding: 11px 12px;
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+      color: #ffffff;
+      background: var(--primary);
+    }
+
+    button:hover {
+      background: var(--primary-dark);
+    }
+
+    button.secondary {
+      color: var(--text);
+      background: #eef2f8;
+      border: 1px solid #cfd7e5;
+    }
+
+    button.secondary:hover {
+      background: #e4eaf4;
+    }
+
+    button.warning {
+      background: var(--warning);
+    }
+
+    button.warning:hover {
+      background: #8f4900;
+    }
+
+    .large-action {
+      width: 100%;
+      min-height: 64px;
+      margin-top: 12px;
+      font-size: 18px;
+      background: var(--accent);
+    }
+
+    .large-action:hover {
+      background: #0e46aa;
+    }
+
+    .notice {
+      border: 1px solid #c8d0df;
+      border-radius: 8px;
+      padding: 12px;
+      background: #f9fbff;
+      color: var(--muted);
+      line-height: 1.5;
+      font-size: 15px;
+    }
+
+    .route-summary {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .metric {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      background: #fbfcff;
+    }
+
+    .metric strong {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .metric span {
+      font-size: 20px;
+      font-weight: 900;
+    }
+
+    .steps {
+      display: grid;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .step {
+      display: grid;
+      grid-template-columns: 34px 1fr;
+      gap: 10px;
+      align-items: start;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      background: #ffffff;
+    }
+
+    .step-index {
+      width: 34px;
+      height: 34px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: #e9f7f2;
+      color: var(--primary-dark);
+      font-weight: 900;
+    }
+
+    .step.current {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(20, 88, 212, 0.12);
+    }
+
+    .step-title {
+      margin-bottom: 4px;
+      font-size: 16px;
+      font-weight: 900;
+    }
+
+    .step-body {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    .bus-card {
+      border: 1px solid #bed7ca;
+      border-radius: 8px;
+      padding: 14px;
+      background: #f2fbf7;
+    }
+
+    .bus-number {
+      font-size: 34px;
+      line-height: 1;
+      font-weight: 900;
+      color: var(--success);
+    }
+
+    .bus-meta {
+      margin-top: 8px;
+      color: #365446;
+      line-height: 1.45;
+      font-size: 15px;
+    }
+
+    .ai-result {
+      display: grid;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .ai-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      border-bottom: 1px solid #d6e6dc;
+      padding-bottom: 8px;
+      color: #304b3d;
+    }
+
+    .ai-row:last-child {
+      border-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    .ai-row strong {
+      font-weight: 900;
+    }
+
+    .voice-log {
+      min-height: 120px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      background: #101827;
+      color: #eff6ff;
+      line-height: 1.5;
+      font-size: 15px;
+      white-space: pre-wrap;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    @media (max-width: 760px) {
+      main {
+        padding: 0;
+      }
+
+      .app-shell {
+        min-height: 100vh;
+        border-radius: 0;
+        border: 0;
+      }
+
+      .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .content {
+        grid-template-columns: 1fr;
+      }
+
+      .route-summary {
+        grid-template-columns: 1fr;
+      }
+
+      .button-row {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="title-block">
+          <h1>시각장애인 버스 안내 앱</h1>
+          <div class="subtitle">음성 목적지 입력, 실시간 버스 안내, 노선번호 AI 판정</div>
+        </div>
+        <div class="status-pill" id="systemStatus">시연 모드</div>
+      </header>
+
+      <div class="content">
+        <section>
+          <div class="section">
+            <h2>목적지 설정</h2>
+            <label for="destinationInput">목적지</label>
+            <input id="destinationInput" type="text" value="천안역" autocomplete="off">
+
+            <div class="button-row">
+              <button type="button" id="voiceInputButton">음성 입력</button>
+              <button type="button" class="secondary" id="demoDestinationButton">시연 목적지</button>
+            </div>
+
+            <button type="button" class="large-action" id="findRouteButton">경로 찾기 및 음성 안내</button>
+          </div>
+
+          <div class="section">
+            <h2>길 안내</h2>
+            <div class="route-summary">
+              <div class="metric">
+                <strong>예상 시간</strong>
+                <span id="totalTime">18분</span>
+              </div>
+              <div class="metric">
+                <strong>이용 버스</strong>
+                <span id="routeBus">30-1</span>
+              </div>
+              <div class="metric">
+                <strong>남은 정류장</strong>
+                <span id="remainingStops">3개</span>
+              </div>
+            </div>
+
+            <div class="steps" id="routeSteps" aria-live="polite"></div>
+
+            <div class="button-row">
+              <button type="button" id="prevStepButton" class="secondary">이전 안내</button>
+              <button type="button" id="nextStepButton">다음 안내</button>
+            </div>
+            <button type="button" id="repeatButton" class="large-action">현재 안내 다시 듣기</button>
+          </div>
+        </section>
+
+        <aside>
+          <div class="section">
+            <h2>실시간 버스 정보</h2>
+            <div class="bus-card">
+              <div class="bus-number" id="busNumber">30-1</div>
+              <div class="bus-meta" id="arrivalInfo">
+                도착 예정: 3분 후<br>
+                현재 위치: 두 정류장 전
+              </div>
+
+              <div class="ai-result">
+                <div class="ai-row">
+                  <span>읽은 번호</span>
+                  <strong id="readNumber">30-1</strong>
+                </div>
+                <div class="ai-row">
+                  <span>확정 번호</span>
+                  <strong id="confirmedNumber">30-1</strong>
+                </div>
+                <div class="ai-row">
+                  <span>판정 신뢰도</span>
+                  <strong id="decisionConfidence">0.97</strong>
+                </div>
+              </div>
+            </div>
+
+            <div class="button-row">
+              <button type="button" id="checkBusButton">버스 확인 안내</button>
+              <button type="button" class="warning" id="driverNotifyButton">기사 알림</button>
+            </div>
+          </div>
+
+          <div class="section">
+            <h2>음성 안내 로그</h2>
+            <div class="voice-log" id="voiceLog" aria-live="polite"></div>
+            <button type="button" class="large-action" id="startNavigationButton">안내 시작</button>
+          </div>
+
+          <div class="section">
+            <h2>1학기 구현 범위</h2>
+            <div class="notice">
+              현재 화면은 Python 프로토타입 기능을 앱 형태로 연결한 제출용 시연 화면입니다.
+              음성 목적지 입력, 버스 API 연동 결과, AI 노선번호 판정, 음성 길 안내 흐름을 보여줍니다.
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const destinationInput = document.getElementById("destinationInput");
+    const routeStepsElement = document.getElementById("routeSteps");
+    const voiceLogElement = document.getElementById("voiceLog");
+    const systemStatusElement = document.getElementById("systemStatus");
+    const remainingStopsElement = document.getElementById("remainingStops");
+
+    const routeSteps = [
+      {
+        title: "출발 준비",
+        body: "현재 위치에서 가장 가까운 버스 정류장으로 이동합니다.",
+        speak: "안내를 시작합니다. 현재 위치에서 가장 가까운 버스 정류장으로 이동하세요."
+      },
+      {
+        title: "정류장 도착",
+        body: "30-1번 버스가 약 3분 후 도착 예정입니다.",
+        speak: "정류장에 도착했습니다. 30-1번 버스가 약 3분 후 도착 예정입니다."
+      },
+      {
+        title: "버스 확인",
+        body: "카메라가 버스 전광판을 인식하여 30-1번 버스를 확정했습니다.",
+        speak: "접근 중인 버스는 30-1번입니다. 목표 버스가 맞습니다."
+      },
+      {
+        title: "탑승 안내",
+        body: "버스 기사에게 시각장애인 탑승 요청 알림을 보냅니다.",
+        speak: "버스 기사에게 탑승 요청 알림을 보냈습니다. 안전하게 탑승하세요."
+      },
+      {
+        title: "하차 안내",
+        body: "목적지까지 3개 정류장 남았습니다. 하차 전 음성으로 다시 안내합니다.",
+        speak: "목적지까지 3개 정류장 남았습니다. 하차 준비 시 다시 안내하겠습니다."
+      }
+    ];
+
+    let currentStepIndex = 0;
+    let recognition = null;
+
+    function renderSteps() {
+      routeStepsElement.innerHTML = "";
+
+      routeSteps.forEach((step, index) => {
+        const item = document.createElement("div");
+        item.className = "step" + (index === currentStepIndex ? " current" : "");
+        item.innerHTML = `
+          <div class="step-index">${index + 1}</div>
+          <div>
+            <div class="step-title">${step.title}</div>
+            <div class="step-body">${step.body}</div>
+          </div>
+        `;
+        routeStepsElement.appendChild(item);
+      });
+
+      const remaining = Math.max(0, routeSteps.length - currentStepIndex - 2);
+      remainingStopsElement.textContent = `${remaining}개`;
+    }
+
+    function speak(text) {
+      const message = text.trim();
+
+      if (!message) {
+        return;
+      }
+
+      voiceLogElement.textContent = message;
+
+      if (!("speechSynthesis" in window)) {
+        systemStatusElement.textContent = "음성 출력 미지원";
+        return;
+      }
+
+      window.speechSynthesis.cancel();
+
+      const utterance = new SpeechSynthesisUtterance(message);
+      utterance.lang = "ko-KR";
+      utterance.rate = 0.95;
+      utterance.pitch = 1.0;
+      utterance.volume = 1.0;
+
+      window.speechSynthesis.speak(utterance);
+    }
+
+    function speakCurrentStep() {
+      const step = routeSteps[currentStepIndex];
+      speak(step.speak);
+    }
+
+    function setStep(index) {
+      currentStepIndex = Math.min(routeSteps.length - 1, Math.max(0, index));
+      renderSteps();
+      speakCurrentStep();
+    }
+
+    function findRoute() {
+      const destination = destinationInput.value.trim() || "천안역";
+      systemStatusElement.textContent = "경로 안내 중";
+      currentStepIndex = 0;
+      renderSteps();
+      speak(`${destination}까지의 버스 경로를 찾았습니다. 30-1번 버스를 이용합니다. 예상 소요 시간은 18분입니다.`);
+    }
+
+    function startVoiceInput() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+      if (!SpeechRecognition) {
+        speak("이 브라우저에서는 음성 입력을 지원하지 않습니다. 목적지를 직접 입력해 주세요.");
+        return;
+      }
+
+      recognition = new SpeechRecognition();
+      recognition.lang = "ko-KR";
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+
+      recognition.onstart = () => {
+        systemStatusElement.textContent = "음성 입력 중";
+        voiceLogElement.textContent = "목적지를 말씀해 주세요.";
+      };
+
+      recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        destinationInput.value = transcript;
+        systemStatusElement.textContent = "목적지 입력 완료";
+        speak(`${transcript} 목적지가 입력되었습니다.`);
+      };
+
+      recognition.onerror = () => {
+        systemStatusElement.textContent = "음성 입력 실패";
+        speak("음성 입력에 실패했습니다. 목적지를 직접 입력해 주세요.");
+      };
+
+      recognition.onend = () => {
+        if (systemStatusElement.textContent === "음성 입력 중") {
+          systemStatusElement.textContent = "시연 모드";
+        }
+      };
+
+      recognition.start();
+    }
+
+    function checkBus() {
+      document.getElementById("readNumber").textContent = "30-1";
+      document.getElementById("confirmedNumber").textContent = "30-1";
+      document.getElementById("decisionConfidence").textContent = "0.97";
+      speak("AI가 버스 전광판을 확인했습니다. 읽은 번호와 확정 번호 모두 30-1번입니다.");
+    }
+
+    function notifyDriver() {
+      speak("기사 알림을 보냈습니다. 시각장애인 승객이 탑승할 예정입니다.");
+    }
+
+    document.getElementById("voiceInputButton").addEventListener("click", startVoiceInput);
+    document.getElementById("demoDestinationButton").addEventListener("click", () => {
+      destinationInput.value = "천안역";
+      speak("시연 목적지를 천안역으로 설정했습니다.");
+    });
+    document.getElementById("findRouteButton").addEventListener("click", findRoute);
+    document.getElementById("prevStepButton").addEventListener("click", () => setStep(currentStepIndex - 1));
+    document.getElementById("nextStepButton").addEventListener("click", () => setStep(currentStepIndex + 1));
+    document.getElementById("repeatButton").addEventListener("click", speakCurrentStep);
+    document.getElementById("startNavigationButton").addEventListener("click", () => setStep(0));
+    document.getElementById("checkBusButton").addEventListener("click", checkBus);
+    document.getElementById("driverNotifyButton").addEventListener("click", notifyDriver);
+
+    renderSteps();
+    voiceLogElement.textContent = "목적지를 입력하거나 음성 입력 버튼을 누르세요.";
+  </script>
+</body>
+</html>
