@@ -45,6 +45,7 @@ class _PedestrianPanelState extends State<PedestrianPanel>
   String _message = '현재 위치에서 이동 경로를 찾고 있어요.';
   String? _error;
   String? _spoken;
+  WalkInstruction? _pendingNowInstruction;
   double? _accuracy, _heading;
   int _lastFix = 0, _generation = 0;
   DateTime? _lastRoute, _lastSpeech, _lastErrorSpeech;
@@ -336,6 +337,9 @@ class _PedestrianPanelState extends State<PedestrianPanel>
       }
       final walk = _walk;
       if (walk == null) return;
+
+      final beforeInstruction = walk.next;
+
       if (!walk.update(fix)) {
         setState(() {
           _heading = null;
@@ -343,6 +347,22 @@ class _PedestrianPanelState extends State<PedestrianPanel>
         });
         return;
       }
+
+      final afterInstruction = walk.next;
+
+      if (_pendingNowInstruction == null &&
+          beforeInstruction.turn != 201 &&
+          beforeInstruction.offset != afterInstruction.offset &&
+          _spoken != '${beforeInstruction.offset}:now') {
+        _pendingNowInstruction = beforeInstruction;
+
+        debugPrint(
+          '[WALK_SKIP] 놓친 안내 보관: '
+          'offset=${beforeInstruction.offset} '
+          'action=${beforeInstruction.action}',
+        );
+      }
+
       if (walk.needsReroute) {
         setState(() {
           _heading = null;
@@ -385,8 +405,15 @@ class _PedestrianPanelState extends State<PedestrianPanel>
         heading = (sensor?['heading'] as num?)?.toDouble();
       } catch (_) {}
       if (!_visible || generation != _generation) return;
-      final instruction = walk.next;
-      final distance = (walk.nextDistance / 5).round() * 5;
+
+      final pendingInstruction = _pendingNowInstruction;
+      final instruction = pendingInstruction ?? walk.next;
+
+      final instructionDistance = pendingInstruction != null
+          ? 0.0
+          : walk.nextDistance;
+
+      final distance = (instructionDistance / 5).round() * 5;
 
       debugPrint(
         '[WALK_PROGRESS] '
@@ -401,40 +428,67 @@ class _PedestrianPanelState extends State<PedestrianPanel>
         'reroute=${walk.needsReroute} '
         'nearStop=${walk.nearStop}',
       );
-      final text = walk.nearStop
-          ? (_walkingOnly
-              ? '목적지 근처입니다.'
-              : '정류장 근처입니다. 정확한 정류장 도착은 비콘으로 확인합니다.')
-          : instruction.turn == 201
-              ? '$_walkTargetLabel까지 경로를 따라 약 '
-                '${walk.remaining.ceil()}미터 남았어요.'
-              : '약 ${math.max(5, distance)}미터 앞 '
-                '${instruction.action} 안내 지점입니다.';
-      final start = walk.instructions.isEmpty
-          ? ''
-          : walk.instructions.first.description;
-      final message = walk.progress < 10 && !walk.nearStop && start.isNotEmpty
-          ? '$start\n$text'
-          : text;
-      setState(() {
-        _error = null;
-        _message = message;
-        _heading = heading;
-      });
-      final band = walk.nearStop
-          ? 'nearStop'
-          : '${instruction.offset}:${walk.nextDistance <= 15 ? 'near' : 'ahead'}';
-      if (_spoken != band &&
-          !_speaking &&
-          (_lastSpeech == null ||
-              DateTime.now().difference(_lastSpeech!).inSeconds >= 8)) {
-        _spoken = band;
-        _lastSpeech = DateTime.now();
-        final crossing = instruction.turn >= 211 && instruction.turn <= 217
-            ? ' 신호와 주변 상황을 확인해주세요.'
-            : '';
-        unawaited(_say('$message$crossing'));
-      }
+            final isCrossing =
+                instruction.turn >= 211 && instruction.turn <= 217;
+
+            final isNow =
+                !walk.nearStop &&
+                instruction.turn != 201 &&
+                instructionDistance <= 5;
+
+            final text = walk.nearStop
+                ? (_walkingOnly
+                    ? '목적지 근처입니다.'
+                    : '정류장 근처입니다. 정확한 정류장 도착은 비콘으로 확인합니다.')
+                : instruction.turn == 201
+                    ? '$_walkTargetLabel까지 경로를 따라 약 '
+                      '${walk.remaining.ceil()}미터 남았어요.'
+                    : isNow
+                        ? (isCrossing
+                            ? '횡단보도 앞입니다. 신호와 주변 상황을 확인해주세요.'
+                            : '지금 ${instruction.action}하세요.')
+                        : '약 ${math.max(5, distance)}미터 앞 '
+                          '${instruction.action} 안내 지점입니다.';
+
+            final start = walk.instructions.isEmpty
+                ? ''
+                : walk.instructions.first.description;
+
+            final message =
+                walk.progress < 10 && !walk.nearStop && start.isNotEmpty
+                    ? '$start\n$text'
+                    : text;
+
+            setState(() {
+              _error = null;
+              _message = message;
+              _heading = heading;
+            });
+
+            final band = walk.nearStop
+                ? 'nearStop'
+                : '${instruction.offset}:${instructionDistance <= 5 ? 'now' : instructionDistance <= 15 ? 'near' : 'ahead'}';
+
+            final speechCooldownPassed =
+                _lastSpeech == null ||
+                DateTime.now().difference(_lastSpeech!).inSeconds >= 8;
+
+            if (_spoken != band &&
+                !_speaking &&
+                (isNow || speechCooldownPassed)) {
+              _spoken = band;
+              _lastSpeech = DateTime.now();
+
+              final crossing =
+                  isCrossing && !isNow
+                      ? ' 신호와 주변 상황을 확인해주세요.'
+                      : '';
+
+              unawaited(_say('$message$crossing'));
+              if (pendingInstruction != null && isNow) {
+                _pendingNowInstruction = null;
+}
+            }
     } on PlatformException catch (error) {
       debugPrint('[WALK_LOCATION_ERROR] ${error.code}');
       if (_visible)

@@ -27,13 +27,24 @@ def rows(session, path, params):
     try:
         response = session.post(BASE + path, data=params, timeout=5)
         response.raise_for_status()
-        data = response.json()
-        if data.get('resultCode') != 200 or not isinstance(data.get('rows'), list):
-            raise ValueError('invalid response')
-        return data['rows']
-    except (requests.RequestException, ValueError):
-        raise ValueError('청주시 차량 조회에 실패했습니다. 다시 조회해주세요.') from None
 
+        data = response.json()
+
+        if str(data.get('resultCode')) != '200':
+            raise ValueError(
+                f"청주시 BIS 응답 오류: "
+                f"resultCode={data.get('resultCode')}, "
+                f"message={data.get('resultMsg')}, "
+                f"body={data}"
+            )
+
+        if not isinstance(data.get('rows'), list):
+            raise ValueError(f"청주시 BIS rows 형식 오류: {data}")
+
+        return data['rows']
+
+    except requests.RequestException as e:
+        raise ValueError(f'청주시 BIS 통신 오류: {e}') from None
 
 def resolve_vehicle(city, node, route_id, route_no):
     if str(city) != '33010':

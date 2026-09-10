@@ -85,21 +85,23 @@ class _DriverRequestPageState extends State<DriverRequestPage> {
             if (result['match'] is Map)
               live = Map<String, dynamic>.from(result['match'] as Map);
             matchToken = result['matchToken'] as String?;
-          } catch (_) {
-            /* An explicitly labelled test may run without a live vehicle. */
+          } catch (e) {
+            throw StateError('실제 도착 차량 조회 실패: $e');
           }
         }
         if (!mounted) return;
         setState(() {
           vehicleMatch = live;
-          selected =
-              live?['vehicleNo'] as String? ?? 'TEST-${routeNo.text.trim()}';
+          if (live == null || matchToken == null) {
+            throw StateError('실제 도착 차량을 확인하지 못했습니다.');
+          }
+
+          selected = live['vehicleNo'] as String;
           vehicles = [
             {'vehicleNo': selected, 'routeNo': routeNo.text.trim()},
           ];
-          message = live == null
-              ? '테스트 기사앱으로 연결합니다. 실차 번호판은 확인되지 않아 차량 미지정으로 시험합니다. 차량 등록은 필요 없습니다.'
-              : '조회된 차량번호를 시험에 사용합니다. 실제 기사 등록 없이 테스트 기사앱에서 요청을 처리합니다.';
+          message =
+    '조회된 실제 차량번호를 시험에 사용합니다. 실제 기사 등록 없이 테스트 기사앱에서 요청을 처리합니다.';
         });
         return;
       }
